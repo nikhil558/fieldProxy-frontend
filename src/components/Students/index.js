@@ -27,12 +27,55 @@ class Students extends Component {
     isFilterActive: false,
     slotTime: '',
     styledSlot: '',
+    errMsg: '',
+  }
+
+  componentDidMount() {
+    this.getDataFromDataBase()
+  }
+
+  getDataFromDataBase = async () => {
+    const {name} = this.props
+    const api = 'https://field-proxy-server.herokuapp.com/appointments'
+    const options = {
+      method: 'GET',
+    }
+    const response = await fetch(api, options)
+    const fetchedData = await response.json()
+    const responseObj = fetchedData.map(each => ({
+      id: each.number,
+      title: each.name,
+      date: each.date,
+      time: each.time,
+      isStarred: each.stared,
+      acceptance: each.acceptance,
+    }))
+    const filterObj = responseObj.filter(each => each.title === name)
+    console.log(filterObj)
+    this.setState({appointmentsList: filterObj})
+  }
+
+  updateDataFromDatabase = async data => {
+    const url = 'https://field-proxy-server.herokuapp.com/updateStar'
+    const options = {
+      headers: {'Content-Type': 'application/json'},
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }
+
+    const response = await fetch(url, options)
+    console.log(response)
   }
 
   toggleIsStarred = id => {
     this.setState(prevState => ({
       appointmentsList: prevState.appointmentsList.map(eachAppointment => {
         if (id === eachAppointment.id) {
+          const updateStar = {
+            id: eachAppointment.id,
+            isStared: !eachAppointment.isStarred,
+          }
+          this.updateDataFromDatabase(updateStar)
           return {...eachAppointment, isStarred: !eachAppointment.isStarred}
         }
         return eachAppointment
@@ -51,9 +94,21 @@ class Students extends Component {
     this.setState({slotTime: value, styledSlot: 'slot-click-style'})
   }
 
+  addDataToDatabase = async data => {
+    const url = 'https://field-proxy-server.herokuapp.com/add'
+    const options = {
+      headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+
+    const response = await fetch(url, options)
+    console.log(response)
+  }
+
   onAddAppointment = event => {
     event.preventDefault()
-    const {slotTime, dateInput} = this.state
+    const {slotTime, dateInput, appointmentsList} = this.state
     const {name} = this.props
 
     const formattedDate = dateInput
@@ -66,13 +121,18 @@ class Students extends Component {
       date: formattedDate,
       isStarred: false,
       time: slotTime,
+      acceptance: false,
     }
-
-    this.setState(prevState => ({
-      appointmentsList: [...prevState.appointmentsList, newAppointment],
-      dateInput: '',
-      styledSlot: '',
-    }))
+    if (appointmentsList.length <= 2) {
+      this.addDataToDatabase(newAppointment)
+      this.getDataFromDataBase()
+      this.setState({
+        dateInput: '',
+        styledSlot: '',
+      })
+    } else {
+      this.setState({errMsg: 'You reach the application limit'})
+    }
   }
 
   onChangeDateInput = event => {
@@ -90,7 +150,7 @@ class Students extends Component {
   }
 
   render() {
-    const {dateInput, isFilterActive, styledSlot} = this.state
+    const {dateInput, isFilterActive, styledSlot, errMsg} = this.state
     const filterClassName = isFilterActive ? 'filter-filled' : 'filter-empty'
     const filteredAppointmentsList = this.getFilteredAppointmentsList()
 
@@ -123,6 +183,7 @@ class Students extends Component {
                 <button type="submit" className="add-button">
                   Add
                 </button>
+                <p>{errMsg}</p>
               </form>
               <img
                 src="https://assets.ccbp.in/frontend/react-js/appointments-app/appointments-img.png"

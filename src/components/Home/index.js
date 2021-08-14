@@ -8,15 +8,14 @@ import './index.css'
 
 class Home extends Component {
   render() {
-    const {location} = this.props
-    console.log(location)
-    const {state} = location
-    const {name} = state
-    console.log(location)
     const checkCookie = Cookies.get('jwt_token')
     if (checkCookie === undefined) {
       return <Redirect to="/login" />
     }
+    const {location} = this.props
+    console.log(location)
+    const {state} = location
+    const {name} = state
     return (
       <>
         <Header />
