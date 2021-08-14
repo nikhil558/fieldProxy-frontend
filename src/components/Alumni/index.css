@@ -1,0 +1,11 @@
+.bg-container-alumni {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.appointments {
+  font-size: 30px;
+  color: #2b237c;
+  text-align: center;
+}
